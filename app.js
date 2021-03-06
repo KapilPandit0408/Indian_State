@@ -7,7 +7,7 @@ var express         = require('express');
 
 const url = process.env.MONGO_URL || "mongodb://localhost:27017/States"
 
-mongoose.connect(url,
+mongoose.connect('mongodb+srv://kapil123:kapil123@cluster0.wjkqg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
 {
     useNewUrlParser: true,
     useUnifiedTopology: true,
