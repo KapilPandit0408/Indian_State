@@ -1,104 +1,80 @@
+var express                 = require('express'); 
+var app                     = express();
+var bodyParser              = require('body-parser'),
+    mongoose                = require('mongoose'),
+    passport                = require("passport"),
+    LocalStrategy           = require("passport-local")
+    methodOverride          = require('method-override'),
+    path                    = require('path'),
+    State                   = require("./models/state"),
+    Comment                 = require("./models/comment"),
+    User                    = require("./models/user"),
+    seedDB                  = require("./seeds");
+var commentRoutes           = require("./routes/comments"),
+    statesRoutes            = require("./routes/states"),
+    indexRoutes             = require("./routes/index");        
 
-var express         = require('express');
-    bodyParser      = require('body-parser'),
-    app             = express(),
-    mongoose        = require('mongoose');
+    const url = process.env.MONGO_URL || "mongodb://localhost:27017/States"
 
+    mongoose.connect('mongodb+srv://kapil123:kapil123@cluster0.wjkqg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
+    {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true
+    })
+    .then((result) => {
+        console.log("MongoDb Atlas Connected Successfuly")
+    }).catch((err) => {
+        console.log(" This is Error "+ err  )
+    });       
 
-const url = process.env.MONGO_URL || "mongodb://localhost:27017/States"
-
-mongoose.connect('mongodb+srv://kapil123:kapil123@cluster0.wjkqg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
-{
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true
-})
-.then((result) => {
-    console.log("MongoDb Atlas Connected Successfuly")
-}).catch((err) => {
-    console.log(" This is Error "+ err  )
-});    
-
+app.use(methodOverride("_method"));
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');  
+app.use(express.static(__dirname + "/public"));
+seedDB();
 
-var stateSchema = new mongoose.Schema({
-    name:String,
-    image: String,
-    history:String
-});
+// PASSPORT CONFIG
+app.use(require("express-session")( { 
+    secret: "Ones again Kapil is winner",
+    resave:false,
+    saveUninitialized:false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
-var State = mongoose.model("state", stateSchema);
+// Requring Routes 
+app.use("/states/:id/comments",commentRoutes);
+app.use("/states",statesRoutes);
+app.use("/", indexRoutes);
 
-// State.create(
-//     {
-//         name:"Maharashtra", 
-//         image:"https://www.eyeonasia.gov.sg/images/india-selected/maharashtra-profile.jpg"
-//     },
-//     {
-//         name:"Gujrat",
-//         image:"https://i.ytimg.com/vi/d4ymoRcPKeA/sddefault.jpg"
-//     }, (err, state) => {
-//         if(err) {
-//             console.log(err);
-//         }
-//         else {
-//             console.log("New state create");
-//             console.log(State);
-//         }
-//     })
-
-
-app.get('/', (req, res) => {
-    res.render('landing');
-});
-app.get("/states", (req, res) => {
-   // Get al states from DB
-   State.find({}, (err, allStates) => {
-       if(err) {
-           console.log(err);
-       }
-       else {
-        res.render('index', {states:allStates});
-       }
-   })
-   
-});
-
-app.post('/states', (req, res) => {
-    var name = req.body.name;
-    var image = req.body.image;
-    var history = req.body.history;
-    var newState = {name:name, image:image, history:history}
-// Create new state
-State.create(newState, (err, newlyCreated) => {
-    if(err) {
-        console.log(err);
-    }
-    else {
-        res.redirect('/states');
-    }
-})
-
-});
-
-app.get('/states/new', (req, res) => {
-    res.render("new.ejs")
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
+    next();
 });
 
 
-// Show more info About one state
-app.get('/states/:id', (req, res) => {
-    State.findById(req.params.id, (err, foundState) => {
-        if(err) {
-            console.log(err)
-        }
-        else {
-            res.render("show", {state:foundState});
-        }
-    })
-    
-})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
